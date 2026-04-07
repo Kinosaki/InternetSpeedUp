@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>網路速度提升系統 - 下載版</title>
+    <!-- 引入 Tailwind CSS 用於快速佈局 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #0f172a;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            color: white;
+        }
+
+        /* 升級按鈕樣式：藍色科技感漸層 */
+        .upgrade-btn {
+            position: relative;
+            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+            color: white;
+            padding: 1.5rem 3rem;
+            font-size: 1.5rem;
+            font-weight: 900;
+            border-radius: 9999px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+            transition: all 0.2s ease;
+            z-index: 10;
+            overflow: hidden;
+            outline: none;
+        }
+
+        .upgrade-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 20px 35px -5px rgba(37, 99, 235, 0.5);
+        }
+
+        .upgrade-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        /* 特效容器 */
+        #particle-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* 畫面上彈出的 SPEED UP! 字體樣式 */
+        .level-up-text {
+            position: absolute;
+            color: #38bdf8;
+            font-size: 5rem;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.8), 0 0 40px rgba(56, 189, 248, 0.4);
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+            z-index: 20;
+            white-space: nowrap;
+        }
+
+        /* 字體彈出動畫 */
+        @keyframes levelUpPop {
+            0% { opacity: 0; transform: scale(0.5) translateY(0); }
+            20% { opacity: 1; transform: scale(1.2) translateY(-20px); }
+            80% { opacity: 1; transform: scale(1) translateY(-40px); }
+            100% { opacity: 0; transform: scale(1.1) translateY(-100px); }
+        }
+
+        /* 畫面瞬間閃爍特效背景 */
+        .flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #e0f2fe;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        @keyframes flashEffect {
+            0% { opacity: 0.6; }
+            100% { opacity: 0; }
+        }
+
+        /* 背景放射光束容器 */
+        .ray-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 單條光束樣式 */
+        .ray {
+            position: absolute;
+            width: 2000px;
+            height: 60px;
+            background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.2), transparent);
+            transform-origin: center center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="text-center">
+        <div class="text-slate-400 text-lg mb-1">當前網路頻寬</div>
+        <!-- 顯示速度的區域 -->
+        <div id="current-level-display" class="text-sky-400 text-5xl md:text-7xl mb-8 font-black italic tracking-tighter">
+            100 Mbps
+        </div>
+        <button id="upgrade-trigger" class="upgrade-btn">
+            加速網路速度！
+        </button>
+    </div>
+
+    <!-- 特效層 -->
+    <div id="flash-overlay" class="flash"></div>
+    <div id="particle-container"></div>
+    <div id="ray-container" class="ray-container"></div>
+    <div id="level-up-text" class="level-up-text">SPEED UP!</div>
+
+    <script>
+        const btn = document.getElementById('upgrade-trigger');
+        const flash = document.getElementById('flash-overlay');
+        const particleContainer = document.getElementById('particle-container');
+        const levelUpText = document.getElementById('level-up-text');
+        const rayContainer = document.getElementById('ray-container');
+        const levelDisplay = document.getElementById('current-level-display');
+        
+        let currentSpeed = 100;
+
+        // 初始化：動態產生背景旋轉光束
+        for (let i = 0; i < 15; i++) {
+            const ray = document.createElement('div');
+            ray.className = 'ray';
+            ray.style.transform = `rotate(${i * 24}deg)`;
+            rayContainer.appendChild(ray);
+        }
+
+        /**
+         * 建立噴發粒子效果
+         */
+        function createParticle(x, y) {
+            const particle = document.createElement('div');
+            const size = Math.random() * 8 + 2;
+            const destinationX = (Math.random() - 0.5) * 1000;
+            const destinationY = (Math.random() - 0.5) * 1000;
+            const color = ['#0ea5e9', '#38bdf8', '#7dd3fc', '#ffffff'][Math.floor(Math.random() * 4)];
+
+            particle.style.cssText = `
+                position: absolute;
+                top: ${y}px;
+                left: ${x}px;
+                width: ${size}px;
+                height: ${size}px;
+                background-color: ${color};
+                border-radius: 2px;
+                pointer-events: none;
+                z-index: 15;
+                box-shadow: 0 0 ${size * 2}px ${color};
+            `;
+
+            particleContainer.appendChild(particle);
+
+            // 執行平移動畫
+            const animation = particle.animate([
+                { transform: 'translate(0, 0)', opacity: 1 },
+                { transform: `translate(${destinationX}px, ${destinationY}px)`, opacity: 0 }
+            ], {
+                duration: 800 + Math.random() * 600,
+                easing: 'ease-out'
+            });
+
+            // 動畫結束後移除元素以節省記憶體
+            animation.onfinish = () => particle.remove();
+        }
+
+        // 監聽按鈕點擊
+        btn.addEventListener('click', () => {
+            // 1. 數值更新：增加隨機速度
+            currentSpeed += Math.floor(Math.random() * 50) + 50;
+            levelDisplay.innerText = `${currentSpeed} Mbps`;
+
+            // 2. 畫面閃光特效
+            flash.style.animation = 'none';
+            void flash.offsetWidth; // 觸發 reflow 重新啟動動畫
+            flash.style.animation = 'flashEffect 0.4s ease-out forwards';
+
+            // 3. SPEED UP! 文字彈出
+            levelUpText.style.animation = 'none';
+            void levelUpText.offsetWidth;
+            levelUpText.style.animation = 'levelUpPop 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+
+            // 4. 背景光束旋轉放大
+            rayContainer.animate([
+                { opacity: 0, transform: 'rotate(0deg) scale(0.8)' },
+                { opacity: 1, transform: 'rotate(90deg) scale(1.2)', offset: 0.5 },
+                { opacity: 0, transform: 'rotate(180deg) scale(1.5)' }
+            ], {
+                duration: 1000,
+                easing: 'ease-out'
+            });
+
+            // 5. 獲取按鈕位置並噴發大量粒子
+            const rect = btn.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < 80; i++) {
+                createParticle(centerX, centerY);
+            }
+
+            // 6. 按鈕自身的擠壓震動回饋
+            btn.animate([
+                { transform: 'scale(1)' },
+                { transform: 'scale(1.15)', offset: 0.1 },
+                { transform: 'scale(0.95)', offset: 0.2 },
+                { transform: 'scale(1)' }
+            ], {
+                duration: 400,
+                easing: 'ease-in-out'
+            });
+        });
+    </script>
+</body>
+</html>
